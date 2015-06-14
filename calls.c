@@ -1,5 +1,5 @@
 /*
- * DyIO library: API calls.
+ * DyIO library: basic API calls.
  *
  * Copyright (C) 2015 Serge Vakulenko
  *
@@ -32,7 +32,15 @@ void dyio_set_mode(dyio_t *d, int ch, int mode)
 /*
  * Set channel value.
  */
-void dyio_set_value(dyio_t *d, int ch, int value, int msec)
+void dyio_set_value(dyio_t *d, int ch, int value)
+{
+    dyio_set_value_msec(d, ch, value, 0);
+}
+
+/*
+ * Set channel value.
+ */
+void dyio_set_value_msec(dyio_t *d, int ch, int value, int msec)
 {
     uint8_t query[9];
 

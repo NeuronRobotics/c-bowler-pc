@@ -1,5 +1,5 @@
 /*
- * DyIO library: query and print information about the device.
+ * DyIO library: implementation of the low level serial protocol.
  *
  * Copyright (C) 2015 Serge Vakulenko
  *

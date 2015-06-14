@@ -29,36 +29,22 @@ int verbose;
  */
 void test1(dyio_t *d)
 {
-    int led0, led1, button;
+    int led, button;
 
     printf("Test 1: button at channel 23, two LEDs at channels 00 and 01.\n");
     dyio_set_mode(d, 23, MODE_DI);
     dyio_set_mode(d, 0, MODE_DO);
     dyio_set_mode(d, 1, MODE_DO);
-    led0 = 0;
-    led1 = 0;
+    led = 0;
+    dyio_set_value(d, 0, 0);
+    dyio_set_value(d, 1, 1);
     for (;;) {
         button = !dyio_get_value(d, 23);
-        if (button) {
-            if (! led0) {
-                printf("#");
-                led0 = 1;
-                dyio_set_value(d, 0, led0, 0);
-            }
-            if (led1) {
-                led1 = 0;
-                dyio_set_value(d, 1, led1, 0);
-            }
-        } else {
-            if (led0) {
-                printf(".");
-                led0 = 0;
-                dyio_set_value(d, 0, led0, 0);
-            }
-            if (! led1) {
-                led1 = 1;
-                dyio_set_value(d, 1, led1, 0);
-            }
+        if (button != led) {
+            printf(button ? "#" : ".");
+            led = button;
+            dyio_set_value(d, 0, button);
+            dyio_set_value(d, 1, !button);
         }
         fflush(stdout);
         usleep(10000);

@@ -6,18 +6,80 @@
  * This file is distributed under the terms of the Apache License, Version 2.0.
  * See http://opensource.org/licenses/Apache-2.0 for details.
  */
-typedef struct {
-    unsigned char   mac[6];         /* Inique address of the device */
 
+/*
+ * Data structure describing a connection to a DyIO device.
+ */
+typedef struct {
+    /* User visible part. */
+    unsigned char   mac[6];         /* Inique address of the device */
     unsigned char   reply[256];     /* Bytes of last reply */
     int             reply_len;      /* Number of bytes */
     unsigned char   reply_mac[6];   /* Address extracted from reply */
-
     int             debug;          /* Trace USB protocol */
+
+    /* Actually more data are allocated.
+     * Here comes an OS-dependent stuff, hidden from the user. */
 } dyio_t;
 
 /*
- *Packet types.
+ * Establish a connection to the DyIO device.
+ */
+dyio_t *dyio_connect(const char *devname, int debug);
+
+/*
+ * Close the connection and deallocate device object.
+ */
+void dyio_close(dyio_t *d);
+
+/*
+ * Set channel mode.
+ */
+void dyio_set_mode(dyio_t *d, int ch, int mode);
+
+/*
+ * Get current channel value.
+ */
+int dyio_get_value(dyio_t *d, int ch);
+
+/*
+ * Set channel value.
+ */
+void dyio_set_value(dyio_t *d, int ch, int value);
+
+/*
+ * Set channel value.
+ */
+void dyio_set_value_msec(dyio_t *d, int ch, int value, int msec);
+
+/*
+ * Query and display generic information about the DyIO device.
+ */
+void dyio_info(dyio_t *d);
+
+/*
+ * Query and display information about the namespaces.
+ */
+void dyio_print_namespaces(dyio_t *d);
+
+/*
+ * Query and print a table of channel capabilities.
+ */
+void dyio_print_channel_features(dyio_t *d);
+
+/*
+ * Query and display current status of the channels.
+ */
+void dyio_print_channels(dyio_t *d);
+
+/*
+ * Send the command sequence and get back a response.
+ */
+void dyio_call(dyio_t *d, int type, int namespace, char *rpc,
+    unsigned char *data, int datalen);
+
+/*
+ * Packet types.
  */
 #define PKT_STATUS      0x00    /* Synchronous, high priority, non state changing */
 #define PKT_GET         0x10    /* Synchronous, query for information, non state changing */
@@ -54,7 +116,9 @@ typedef struct {
 #define TYPE_BOOL           43  /* a boolean value */
 #define TYPE_FIXED1K_STR    44  /* first byte is number of values, next is floats */
 
-/* Channel modes. */
+/*
+ * Channel modes.
+ */
 #define MODE_NO_CHANGE              0x00
 #define MODE_HIGH_IMPEDANCE         0x01
 #define MODE_DI                     0x02
@@ -79,57 +143,6 @@ typedef struct {
 #define MODE_DC_MOTOR_DIR           0x15
 #define MODE_PPM_IN                 0x16
 #define MODE_MAX                    0x17    /* limit */
-
-/*
- * Establish a connection to the DyIO device.
- */
-dyio_t *dyio_connect(const char *devname, int debug);
-
-/*
- * Close the connection and deallocate device object.
- */
-void dyio_close(dyio_t *d);
-
-/*
- * Set channel mode.
- */
-void dyio_set_mode(dyio_t *d, int ch, int mode);
-
-/*
- * Get current channel value.
- */
-int dyio_get_value(dyio_t *d, int ch);
-
-/*
- * Set channel value.
- */
-void dyio_set_value(dyio_t *d, int ch, int value, int msec);
-
-/*
- * Query and display generic information about the DyIO device.
- */
-void dyio_info(dyio_t *d);
-
-/*
- * Query and display information about the namespaces.
- */
-void dyio_print_namespaces(dyio_t *d);
-
-/*
- * Query and print a table of channel capabilities.
- */
-void dyio_print_channel_features(dyio_t *d);
-
-/*
- * Query and display current status of the channels.
- */
-void dyio_print_channels(dyio_t *d);
-
-/*
- * Send the command sequence and get back a response.
- */
-void dyio_call(dyio_t *d, int type, int namespace, char *rpc,
-    unsigned char *data, int datalen);
 
 /*
  * Open the serial port.
