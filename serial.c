@@ -1,5 +1,7 @@
 /*
- * Interface to serial port.
+ * DyIO library: Interface to serial port.
+ * These routines are internal to the DyIO library and not intended
+ * to be called directly from user application.
  *
  * Copyright (C) 2015 Serge Vakulenko
  *
@@ -12,19 +14,27 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include "serial.h"
-
-extern int dyio_debug;
+#include "dyio.h"
 
 #if defined(__WIN32__) || defined(WIN32)
-    #include <windows.h>
-    static void *fd = INVALID_HANDLE_VALUE;
-    static DCB saved_mode;
+#   include <windows.h>
 #else
-    #include <termios.h>
-    static int fd = -1;
-    static struct termios saved_mode;
+#   include <termios.h>
 #endif
+
+typedef struct {
+    /* Generic DyIO data structure. */
+    dyio_t  generic;
+
+    /* OS dependent part. */
+#if defined(__WIN32__) || defined(WIN32)
+    void *fd;
+    DCB saved_mode;
+#else
+    int fd;
+    struct termios saved_mode;
+#endif
+} dyio_serial_t;
 
 /*
  * Encode the speed in bits per second into bit value
@@ -136,16 +146,18 @@ printf("Unknown baud\n");
  * Send data to device.
  * Return number of bytes, or -1 on error.
  */
-int serial_write(unsigned char *data, int len)
+int _dyio_serial_write(dyio_t *d, unsigned char *data, int len)
 {
+    dyio_serial_t *s = (dyio_serial_t*) d;
+
 #if defined(__WIN32__) || defined(WIN32)
     DWORD written;
 
-    if (! WriteFile(fd, data, len, &written, 0))
+    if (! WriteFile(s->fd, data, len, &written, 0))
         return -1;
     return len;
 #else
-    return write(fd, data, len);
+    return write(s->fd, data, len);
 #endif
 }
 
@@ -153,13 +165,15 @@ int serial_write(unsigned char *data, int len)
  * Receive data from device.
  * Return number of bytes, or -1 on error.
  */
-int serial_read(unsigned char *data, int len)
+int _dyio_serial_read(dyio_t *d, unsigned char *data, int len)
 {
+    dyio_serial_t *s = (dyio_serial_t*) d;
+
 #if defined(__WIN32__) || defined(WIN32)
     DWORD got;
 
-    if (! ReadFile(fd, data, len, &got, 0)) {
-        fprintf(stderr, "stk-send: read error\n");
+    if (! ReadFile(s->fd, data, len, &got, 0)) {
+        fprintf(stderr, "serial-read: read error\n");
         exit(-1);
     }
 #else
@@ -172,29 +186,29 @@ int serial_read(unsigned char *data, int len)
     to2 = timeout;
 again:
     FD_ZERO(&rfds);
-    FD_SET(fd, &rfds);
+    FD_SET(s->fd, &rfds);
 
-    got = select(fd + 1, &rfds, 0, 0, &to2);
+    got = select(s->fd + 1, &rfds, 0, 0, &to2);
     if (got < 0) {
         if (errno == EINTR || errno == EAGAIN) {
-            if (dyio_debug > 1)
-                printf("stk-send: programmer is not responding\n");
+            if (d->debug)
+                printf("serial-read: device is not responding\n");
             goto again;
         }
-        fprintf(stderr, "stk-send: select error: %s\n", strerror(errno));
+        fprintf(stderr, "serial-read: select error: %s\n", strerror(errno));
         exit(1);
     }
 #endif
     if (got == 0) {
-        if (dyio_debug > 1)
-            printf("stk-send: programmer is not responding\n");
+        if (d->debug)
+            printf("serial-read: device is not responding\n");
         return 0;
     }
 
 #if ! defined(__WIN32__) && !defined(WIN32)
-    got = read(fd, data, (len > 1024) ? 1024 : len);
+    got = read(s->fd, data, (len > 1024) ? 1024 : len);
     if (got < 0) {
-        fprintf(stderr, "stk-send: read error\n");
+        fprintf(stderr, "serial-read: read error\n");
         exit(-1);
     }
 #endif
@@ -204,14 +218,16 @@ again:
 /*
  * Close the serial port.
  */
-void serial_close()
+void _dyio_serial_close(dyio_t *d)
 {
+    dyio_serial_t *s = (dyio_serial_t*) d;
+
 #if defined(__WIN32__) || defined(WIN32)
-    SetCommState(fd, &saved_mode);
-    CloseHandle(fd);
+    SetCommState(s->fd, &s->saved_mode);
+    CloseHandle(s->fd);
 #else
-    tcsetattr(fd, TCSANOW, &saved_mode);
-    close(fd);
+    tcsetattr(s->fd, TCSANOW, &s->saved_mode);
+    close(s->fd);
 #endif
 }
 
@@ -219,7 +235,7 @@ void serial_close()
  * Open the serial port.
  * Return -1 on error.
  */
-int serial_open(const char *devname, int baud_rate)
+dyio_t *_dyio_serial_open(const char *devname, int baud_rate)
 {
 #if defined(__WIN32__) || defined(WIN32)
     DCB new_mode;
@@ -227,25 +243,34 @@ int serial_open(const char *devname, int baud_rate)
 #else
     struct termios new_mode;
 #endif
+    dyio_serial_t *s;
+
+    s = calloc(1, sizeof(dyio_serial_t));
+    if (! s) {
+        fprintf(stderr, "dyio: Out of memory\n");
+        return 0;
+    }
 
 #if defined(__WIN32__) || defined(WIN32)
     /* Open port */
-    fd = CreateFile(devname, GENERIC_READ | GENERIC_WRITE,
+    s->fd = CreateFile(devname, GENERIC_READ | GENERIC_WRITE,
         0, 0, OPEN_EXISTING, 0, 0);
-    if (fd == INVALID_HANDLE_VALUE) {
+    if (s->fd == INVALID_HANDLE_VALUE) {
         fprintf(stderr, "%s: Cannot open\n", devname);
-        return -1;
+        free(s);
+        return 0;
     }
 
     /* Set serial attributes */
-    memset(&saved_mode, 0, sizeof(saved_mode));
-    if (! GetCommState(fd, &saved_mode)) {
+    memset(&s->saved_mode, 0, sizeof(s->saved_mode));
+    if (! GetCommState(s->fd, &s->saved_mode)) {
         fprintf(stderr, "%s: Cannot get state\n", devname);
-        return -1;
+        CloseHandle(s->fd);
+        free(s);
+        return 0;
     }
 
-    new_mode = saved_mode;
-
+    new_mode = s->saved_mode;
     new_mode.BaudRate = baud_rate;
     new_mode.ByteSize = 8;
     new_mode.StopBits = ONESTOPBIT;
@@ -259,37 +284,43 @@ int serial_open(const char *devname, int baud_rate)
     new_mode.fNull = FALSE;
     new_mode.fAbortOnError = FALSE;
     new_mode.fBinary = TRUE;
-    if (! SetCommState(fd, &new_mode)) {
+    if (! SetCommState(s->fd, &new_mode)) {
         fprintf(stderr, "%s: Cannot set state\n", devname);
-        return -1;
+        CloseHandle(s->fd);
+        free(s);
+        return 0;
     }
 
     memset(&ctmo, 0, sizeof(ctmo));
     ctmo.ReadIntervalTimeout = 0;
     ctmo.ReadTotalTimeoutMultiplier = 0;
     ctmo.ReadTotalTimeoutConstant = 5000;
-    if (! SetCommTimeouts(fd, &ctmo)) {
+    if (! SetCommTimeouts(s->fd, &ctmo)) {
         fprintf(stderr, "%s: Cannot set timeouts\n", devname);
-        return -1;
+        CloseHandle(s->fd);
+        free(s);
+        return 0;
     }
 #else
     /* Encode baud rate. */
     int baud_code = baud_encode(baud_rate);
     if (baud_code < 0) {
         fprintf(stderr, "%s: Bad baud rate %d\n", devname, baud_rate);
-        return -1;
+        free(s);
+        return 0;
     }
 
     /* Open port */
-    fd = open(devname, O_RDWR | O_NOCTTY | O_NONBLOCK);
-    if (fd < 0) {
+    s->fd = open(devname, O_RDWR | O_NOCTTY | O_NONBLOCK);
+    if (s->fd < 0) {
         perror(devname);
-        return -1;
+        free(s);
+        return 0;
     }
 
     /* Set serial attributes */
-    memset(&saved_mode, 0, sizeof(saved_mode));
-    tcgetattr(fd, &saved_mode);
+    memset(&s->saved_mode, 0, sizeof(s->saved_mode));
+    tcgetattr(s->fd, &s->saved_mode);
 
     /* 8n1, ignore parity */
     memset(&new_mode, 0, sizeof(new_mode));
@@ -301,13 +332,13 @@ int serial_open(const char *devname, int baud_rate)
     new_mode.c_cc[VMIN]  = 1;
     cfsetispeed(&new_mode, baud_code);
     cfsetospeed(&new_mode, baud_code);
-    tcflush(fd, TCIFLUSH);
-    tcsetattr(fd, TCSANOW, &new_mode);
+    tcflush(s->fd, TCIFLUSH);
+    tcsetattr(s->fd, TCSANOW, &new_mode);
 
     /* Clear O_NONBLOCK flag. */
-    int flags = fcntl(fd, F_GETFL, 0);
+    int flags = fcntl(s->fd, F_GETFL, 0);
     if (flags >= 0)
-        fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+        fcntl(s->fd, F_SETFL, flags & ~O_NONBLOCK);
 #endif
-    return 0;
+    return &s->generic;
 }
