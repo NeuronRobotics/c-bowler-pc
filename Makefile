@@ -1,5 +1,5 @@
 PROG            = dyio
-LIB             = dyio.a
+LIB             = libdyio.a
 CFLAGS		= -O -Wall -Werror
 LDFLAGS		=
 #CC		= i586-mingw32msvc-gcc
@@ -12,7 +12,7 @@ $(LIB):         $(OBJS)
 		$(AR) cq $@ $(OBJS)
 
 $(PROG):        tool.o $(LIB)
-		$(CC) $(LDFLAGS) tool.o $(LIB) -o $@
+		$(CC) $(LDFLAGS) tool.o -L. -ldyio -o $@
 
 clean:
 		rm -f $(PROG) *.o *.a *~ a.out
