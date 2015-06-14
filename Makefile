@@ -1,13 +1,18 @@
 PROG            = dyio
+LIB             = libdyio.a
 CFLAGS		= -O -Wall -Werror
 LDFLAGS		=
 #CC		= i586-mingw32msvc-gcc
-OBJS            = $(PROG).o serial.o
+OBJS            = serial.o connect.o calls.o print.o
 
-all:		$(PROG)
+all:		$(LIB) $(PROG)
 
-$(PROG):        $(OBJS)
-		$(CC) $(LDFLAGS) $(OBJS) -o $@
+$(LIB):         $(OBJS)
+		@rm -f $@
+		$(AR) cq $@ $(OBJS)
+
+$(PROG):        tool.o $(LIB)
+		$(CC) $(LDFLAGS) tool.o -L. -ldyio -o $@
 
 clean:
-		rm -f $(PROG) *.o *~ a.out
+		rm -f $(PROG) *.o *.a *~ a.out
