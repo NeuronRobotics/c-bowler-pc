@@ -24,9 +24,6 @@ $(LIB):         $(OBJS)
 $(PROG):        tool.o $(LIB)
 		$(CC) $(LDFLAGS) tool.o -L. -ldyio -o $@
 
-clean:
-		rm -f $(PROG) *.o *.a *~ a.out
-
 ###
 calls.o: calls.c dyio.h
 connect.o: connect.c dyio.h

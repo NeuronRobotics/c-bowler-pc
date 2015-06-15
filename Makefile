@@ -1,5 +1,9 @@
+#
+# To build the library and dyio utility, use:
+#   $ make
+#
+
 CC              = gcc
-#CC             = i586-mingw32msvc-gcc
 GITVERS         = $(shell git rev-list HEAD --count)
 CFLAGS          = -O -Wall -Werror -DGITVERSION='"$(GITVERS)"'
 LDFLAGS         =
@@ -17,7 +21,7 @@ $(PROG):        tool.o $(LIB)
 		$(CC) $(LDFLAGS) tool.o -L. -ldyio -o $@
 
 clean:
-		rm -f $(PROG) *.o *.a *~ a.out
+		rm -f $(PROG) *.o *.a *~ *.exe
 
 ###
 calls.o: calls.c dyio.h

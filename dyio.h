@@ -7,6 +7,8 @@
  * See http://opensource.org/licenses/Apache-2.0 for details.
  */
 
+#define MAX_CHANNELS    64          /* Max channels per device */
+
 /*
  * Data structure describing a connection to a DyIO device.
  */
@@ -48,7 +50,7 @@ int dyio_get_value(dyio_t *d, int ch);
 void dyio_set_value(dyio_t *d, int ch, int value);
 
 /*
- * Set channel value.
+ * Set channel value with additional timing parameter.
  */
 void dyio_set_value_msec(dyio_t *d, int ch, int value, int msec);
 
@@ -142,7 +144,7 @@ void dyio_call(dyio_t *d, int type, int namespace, char *rpc,
 #define MODE_DC_MOTOR_VEL           0x14
 #define MODE_DC_MOTOR_DIR           0x15
 #define MODE_PPM_IN                 0x16
-#define MODE_MAX                    0x17    /* limit */
+#define MAX_MODES                   0x17    /* limit */
 
 /*
  * Open the serial port.

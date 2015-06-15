@@ -183,7 +183,7 @@ void dyio_print_namespaces(dyio_t *d)
 void dyio_print_channel_features(dyio_t *d)
 {
     int num_channels, c, num_modes, i, m;
-    uint8_t query[1], chan_feature[64][MODE_MAX];
+    uint8_t query[1], chan_feature[MAX_CHANNELS][MAX_MODES];
 
     /* Get number of channels. */
     dyio_call(d, PKT_GET, ID_BCS_IO, "gchc", 0, 0);
@@ -214,7 +214,7 @@ void dyio_print_channel_features(dyio_t *d)
     printf("\n");
     printf("Channel Features:                             1 1 1 1 1 1 1 1 1 1 2 2 2 2\n");
     printf("                          0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3\n");
-    for (m=MODE_DI; m<MODE_MAX; m++) {
+    for (m=MODE_DI; m<MAX_MODES; m++) {
         if (m == MODE_UNUSED)
             continue;
 
@@ -232,8 +232,8 @@ void dyio_print_channel_features(dyio_t *d)
 void dyio_print_channels(dyio_t *d)
 {
     int num_channels, c;
-    uint8_t chan_mode[64], *p;
-    int chan_value[64];
+    uint8_t chan_mode[MAX_CHANNELS], *p;
+    int chan_value[MAX_CHANNELS];
 
     /* Get current channel modes. */
     dyio_call(d, PKT_GET, ID_BCS_IO, "gacm", 0, 0);

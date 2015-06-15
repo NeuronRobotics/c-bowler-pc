@@ -164,6 +164,8 @@ flush_input:
     }
 
     if (hdr.type == PKT_ASYNC) {
+        /* For now, just ignore async incoming packets.
+         * TODO: use callbacks defined by user. */
         goto next;
     }
 }

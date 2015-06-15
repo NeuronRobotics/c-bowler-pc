@@ -38,7 +38,7 @@ void dyio_set_value(dyio_t *d, int ch, int value)
 }
 
 /*
- * Set channel value.
+ * Set channel value with additional timing parameter.
  */
 void dyio_set_value_msec(dyio_t *d, int ch, int value, int msec)
 {
