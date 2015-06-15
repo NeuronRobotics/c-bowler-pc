@@ -1,3 +1,4 @@
 dyio
 *.o
 *.a
+*.exe

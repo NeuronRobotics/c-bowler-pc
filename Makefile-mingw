@@ -1,9 +1,17 @@
-CC              = gcc
-#CC             = i586-mingw32msvc-gcc
+#
+# It is possible to build dyio.exe utility (for Windows) under Linux.
+# All you need is to install mingw32 package and use this file:
+#   $ sudo apt-get install mingw32
+#   $ make clean
+#   $ make -f Makefile-mingw
+#
+
+#CC             = gcc
+CC              = i586-mingw32msvc-gcc
 GITVERS         = $(shell git rev-list HEAD --count)
 CFLAGS          = -O -Wall -Werror -DGITVERSION='"$(GITVERS)"'
 LDFLAGS         =
-PROG            = dyio
+PROG            = dyio.exe
 OBJS            = serial.o connect.o calls.o print.o
 LIB             = libdyio.a
 

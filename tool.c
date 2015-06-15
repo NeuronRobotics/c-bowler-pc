@@ -14,7 +14,7 @@
 #include <getopt.h>
 #include "dyio.h"
 
-const char version[] = "1.0";
+const char version[] = "1.0."GITVERSION;
 const char copyright[] = "Copyright (C) 2015 Serge Vakulenko";
 
 char *progname;

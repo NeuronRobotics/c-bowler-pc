@@ -271,7 +271,7 @@ dyio_t *_dyio_serial_open(const char *devname, int baud_rate)
     }
 
     new_mode = s->saved_mode;
-    new_mode.BaudRate = baud_rate;
+    new_mode.BaudRate = baud_encode(baud_rate);
     new_mode.ByteSize = 8;
     new_mode.StopBits = ONESTOPBIT;
     new_mode.Parity = 0;
