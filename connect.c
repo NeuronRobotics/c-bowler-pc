@@ -184,7 +184,7 @@ dyio_t *dyio_connect(const char *devname, int debug)
         return 0;
     }
 
-    /* Set debug option. */
+    /*  debug option. */
     d->debug = debug;
 
     /* Ping the device. */

@@ -107,7 +107,8 @@ int main(int argc, char **argv)
         verbose++;
     }
 
-    if (argc != 1)
+
+    if (argc < 1)
         usage();
     devname = argv[0];
 
@@ -149,6 +150,23 @@ int main(int argc, char **argv)
     */
     }
 
+	if (argc == 4){
+		printf("\n%s\n",argv[1]);
+		if (strcmp(argv[1], "mode")==0){
+
+			int ch = strtol(argv[2], (char **)NULL, 10);
+			int mode = strtol(argv[3], (char **)NULL, 10);
+			printf("Set ch %d to mode %d\n",ch,mode);		
+			dyio_set_mode(d, ch, mode);
+		} else if(strcmp(argv[1], "value")==0) {
+
+			int ch = strtol(argv[2], (char **)NULL, 10);
+			int val = strtol(argv[3], (char **)NULL, 10);
+			printf("Set ch %d to value %d\n",ch,val);
+			dyio_set_value(d, ch, val);	
+		}
+	}
+	
     dyio_close(d);
     return 0;
 }
